@@ -5,7 +5,6 @@ import (
     "io/ioutil"
     "log"
     "os"
-    "strings"
     "time"
     "github.com/urfave/cli/v2"
 )
@@ -98,10 +97,7 @@ func main() {
                     var lints []Lint
                     compileDependencyTree(path, firstBundle, &services, &lints)
 
-                    // print services
-                    for _, service := range services {
-                        fmt.Printf("%s %s (%s)\n", service.Name, service.Type, strings.Join(service.Dependencies, ", "))
-                    }
+                    fmt.Printf(renderMermaidGraph(services))
 
                     return nil
                 },
@@ -170,11 +166,11 @@ func compileDependencyTree(rootPath string, currentService string, services *[]S
     }
     var dependencies []string
     for _, f := range files {
-        if f.Name() == "base" {
+    	dependencies = append(dependencies, f.Name())
+    	if f.Name() == "base" {
+    	    // we don't want to check the base directory
             continue
         }
-
-    	dependencies = append(dependencies, f.Name())
     	// recursive call
     	compileDependencyTree(rootPath, f.Name(), services, lints)
     }
@@ -187,4 +183,16 @@ func compileDependencyTree(rootPath string, currentService string, services *[]S
     })
 
     return true
+}
+
+func renderMermaidGraph(services []Service) string {
+    var graph string
+    graph = "```mermaid\ngraph TD;\n"
+    for _, service := range services {
+        for _, dependency := range service.Dependencies {
+            graph += fmt.Sprintf("    %s --> %s\n", service.Name, dependency)
+        }
+    }
+    graph += "```\n"
+    return graph
 }
