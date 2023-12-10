@@ -5,6 +5,7 @@ import (
     "io/ioutil"
     "log"
     "os"
+    "strings"
     "time"
     "github.com/urfave/cli/v2"
 )
@@ -123,6 +124,11 @@ type Lint struct {
 
 
 func compileDependencyTree(rootPath string, currentService string, services *[]Service, lints *[]Lint) bool {
+    // Check if the service is already in the services list
+    if containsService(*services, currentService) {
+        return true
+    }
+
     // Check if the directory exists
     currentServicePath := rootPath + "/" + currentService
     if _, err := os.Stat(currentServicePath); os.IsNotExist(err) {
@@ -135,7 +141,7 @@ func compileDependencyTree(rootPath string, currentService string, services *[]S
 
     // check the type file and content
     typeFile := currentServicePath + "/type"
-    serviceTyp, err := ioutil.ReadFile(typeFile)
+    typeFileContent, err := ioutil.ReadFile(typeFile)
     if err != nil {
         *lints = append(*lints, Lint{
             Service: currentService,
@@ -143,7 +149,25 @@ func compileDependencyTree(rootPath string, currentService string, services *[]S
         })
         return false
     }
-    serviceType := string(serviceTyp)
+    // Check if the file is empty
+    if len(typeFileContent) == 0 {
+        *lints = append(*lints, Lint{
+            Service: currentService,
+            Message: fmt.Sprintf("type file for \"%s\" is empty", currentService),
+        })
+        return false
+    }
+
+    // Check if the last character is a newline
+    lastChar := typeFileContent[len(typeFileContent)-1]
+    if lastChar != '\n' {
+        *lints = append(*lints, Lint{
+            Service: currentService,
+            Message: fmt.Sprintf("type file for \"%s\" does not end with a newline", currentService),
+        })
+    }
+
+    serviceType := strings.ReplaceAll(string(typeFileContent), "\n", "")
 
     // check if the dependency directory exists
     dependenciesDir := ""
@@ -171,8 +195,6 @@ func compileDependencyTree(rootPath string, currentService string, services *[]S
     	    // we don't want to check the base directory
             continue
         }
-    	// recursive call
-    	compileDependencyTree(rootPath, f.Name(), services, lints)
     }
 
     // add the service to the services list
@@ -181,6 +203,14 @@ func compileDependencyTree(rootPath string, currentService string, services *[]S
         Type: serviceType,
         Dependencies: dependencies,
     })
+
+    for _, dependency := range dependencies {
+        if containsService(*services, dependency) || dependency == "base" {
+            continue
+        }
+        // recursive call
+        compileDependencyTree(rootPath, dependency, services, lints)
+    }
 
     return true
 }
@@ -195,4 +225,13 @@ func renderMermaidGraph(services []Service) string {
     }
     graph += "```\n"
     return graph
+}
+
+func containsService (services []Service, service string) bool {
+    for _, s := range services {
+        if s.Name == service {
+            return true
+        }
+    }
+    return false
 }
