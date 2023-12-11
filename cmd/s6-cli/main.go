@@ -29,16 +29,10 @@ func main() {
         // so we'll define it up here
         Flags: []cli.Flag{
             &cli.StringFlag{
-                Name:    "config",
-                Aliases: []string{"c"},
-                Value:   "config.yaml",
-                Usage:   "Load configuration from `FILE`",
-            },
-            &cli.StringFlag{
                 Name:    "path",
                 Aliases: []string{"p"},
-                Value:   "/etc/s6-overlay",
-                Usage:   "Path to s6-overlay directory",
+                Value:   "/etc/s6-overlay/s6-rc.d",
+                Usage:   "Path to s6-rc.d directory",
             },
         },
         Commands: []*cli.Command{
@@ -64,10 +58,14 @@ func main() {
                     var lints []Lint
                     valid := compileDependencyTree(path, firstBundle, &services, &lints)
 
+                    fmt.Println("*************** s6-cli Lint Report ***************")
+
                     // print lints
                     for _, lint := range lints {
                         fmt.Printf("* %s: %s\n", lint.Service, lint.Message)
                     }
+
+                    fmt.Println("*************** s6-cli Lint Report ***************")
 
                     if valid {
                         return nil
@@ -77,9 +75,9 @@ func main() {
                 },
             },
             {
-                Name:    "document",
-                Aliases: []string{"d"},
-                Usage:   "document s6 service dependencies",
+                Name:    "mermaid",
+                Aliases: []string{"m"},
+                Usage:   "document s6 service dependencies in mermaid syntax",
                 Action: func(cCtx *cli.Context) error {
                     path := "/etc/s6-overlay/s6-rc.d"
                     firstBundle := "user"
@@ -129,15 +127,19 @@ func compileDependencyTree(rootPath string, currentService string, services *[]S
         return true
     }
 
+    isValid := true
+
     // Check if the directory exists
     currentServicePath := rootPath + "/" + currentService
     if _, err := os.Stat(currentServicePath); os.IsNotExist(err) {
         *lints = append(*lints, Lint{
             Service: currentService,
-            Message: fmt.Sprintf("directory %s does not exist", currentServicePath),
+            Message: fmt.Sprintf("directory for %s does not exist", currentService),
         })
         return false
     }
+
+    if currentService == "user" {}
 
     // check the type file and content
     typeFile := currentServicePath + "/type"
@@ -165,6 +167,7 @@ func compileDependencyTree(rootPath string, currentService string, services *[]S
             Service: currentService,
             Message: fmt.Sprintf("type file for \"%s\" does not end with a newline", currentService),
         })
+        isValid = false
     }
 
     serviceType := strings.ReplaceAll(string(typeFileContent), "\n", "")
@@ -182,6 +185,31 @@ func compileDependencyTree(rootPath string, currentService string, services *[]S
         })
         return false
     }
+
+    // check if the run file exists
+    if serviceType == "longrun" {
+        runFile := currentServicePath + "/run"
+        if _, err := os.Stat(runFile); os.IsNotExist(err) {
+            *lints = append(*lints, Lint{
+                Service: currentService,
+                Message: fmt.Sprintf("run file for longrun \"%s\" does not exist", currentService),
+            })
+            isValid = false
+        }
+    }
+
+    // check if the up file exists
+    if serviceType == "oneshot" {
+        upFile := currentServicePath + "/up"
+        if _, err := os.Stat(upFile); os.IsNotExist(err) {
+            *lints = append(*lints, Lint{
+                Service: currentService,
+                Message: fmt.Sprintf("up file for oneshot \"%s\" does not exist", currentService),
+            })
+            isValid = false
+        }
+    }
+
 
     // get the dependencies
     files, err := ioutil.ReadDir(dependenciesDir)
@@ -212,7 +240,7 @@ func compileDependencyTree(rootPath string, currentService string, services *[]S
         compileDependencyTree(rootPath, dependency, services, lints)
     }
 
-    return true
+    return isValid
 }
 
 func renderMermaidGraph(services []Service) string {
