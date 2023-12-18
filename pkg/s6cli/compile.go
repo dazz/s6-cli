@@ -1,4 +1,4 @@
-package main
+package s6cli
 
 import (
     "fmt"
@@ -6,108 +6,8 @@ import (
     "log"
     "os"
     "strings"
-    "time"
-    "github.com/urfave/cli/v2"
 )
 
-func init() {
-}
-
-func main() {
-    app := &cli.App{
-        Name:  "s6-cli",
-        Version: "0.0.1",
-        Compiled: time.Now(),
-        Authors: []*cli.Author{
-            &cli.Author{
-                Name:  "Anne-Julia Seitz",
-                Email: "dazz@c-base",
-            },
-        },
-        Usage: "CLI for creating and linting files and directories",
-        // We'll be using the same flag for all our commands
-        // so we'll define it up here
-        Flags: []cli.Flag{
-            &cli.StringFlag{
-                Name:    "path",
-                Aliases: []string{"p"},
-                Value:   "/etc/s6-overlay/s6-rc.d",
-                Usage:   "Path to s6-rc.d directory",
-            },
-        },
-        Commands: []*cli.Command{
-            {
-                Name:    "lint",
-                Aliases: []string{"l"},
-                Usage:   "lint directories and files",
-                Action: func(cCtx *cli.Context) error {
-                    path := "/etc/s6-overlay/s6-rc.d"
-                    firstBundle := "user"
-
-                    if cCtx.IsSet("path") {
-                        path = cCtx.String("path")
-                    }
-                    // check if the directory exists
-                    if _, err := os.Stat(path); os.IsNotExist(err) {
-                        fmt.Printf("Directory %s does not exist\n", path)
-                        os.Exit(1)
-                    }
-
-                    // compile dependency tree
-                    var services []Service
-                    var lints []Lint
-                    valid := compileDependencyTree(path, firstBundle, &services, &lints)
-
-                    fmt.Println("*************** s6-cli Lint Report ***************")
-
-                    // print lints
-                    for _, lint := range lints {
-                        fmt.Printf("* %s: %s\n", lint.Service, lint.Message)
-                    }
-
-                    fmt.Println("*************** s6-cli Lint Report ***************")
-
-                    if valid {
-                        return nil
-                    }
-                    os.Exit(1)
-                    return nil
-                },
-            },
-            {
-                Name:    "mermaid",
-                Aliases: []string{"m"},
-                Usage:   "document s6 service dependencies in mermaid syntax",
-                Action: func(cCtx *cli.Context) error {
-                    path := "/etc/s6-overlay/s6-rc.d"
-                    firstBundle := "user"
-
-                    if cCtx.IsSet("path") {
-                        path = cCtx.String("path")
-                    }
-                    // check if the directory exists
-                    if _, err := os.Stat(path); os.IsNotExist(err) {
-                        fmt.Printf("Directory %s does not exist\n", path)
-                        os.Exit(1)
-                    }
-
-                    // compile dependency tree
-                    var services []Service
-                    var lints []Lint
-                    compileDependencyTree(path, firstBundle, &services, &lints)
-
-                    fmt.Printf(renderMermaidGraph(services))
-
-                    return nil
-                },
-            },
-        },
-    }
-
-    if err := app.Run(os.Args); err != nil {
-        log.Fatal(err)
-    }
-}
 
 // Define a struct named Person
 type Service struct {
@@ -121,7 +21,7 @@ type Lint struct {
 }
 
 
-func compileDependencyTree(rootPath string, currentService string, services *[]Service, lints *[]Lint) bool {
+func Compile(rootPath string, currentService string, services *[]Service, lints *[]Lint) bool {
     // Check if the service is already in the services list
     if containsService(*services, currentService) {
         return true
@@ -210,16 +110,15 @@ func compileDependencyTree(rootPath string, currentService string, services *[]S
         }
     }
 
-
     // get the dependencies
     files, err := ioutil.ReadDir(dependenciesDir)
     if err != nil {
         log.Fatal(err)
     }
     var dependencies []string
-    for _, f := range files {
-    	dependencies = append(dependencies, f.Name())
-    	if f.Name() == "base" {
+    for _, file := range files {
+    	dependencies = append(dependencies, file.Name())
+    	if file.Name() == "base" {
     	    // we don't want to check the base directory
             continue
         }
@@ -237,13 +136,13 @@ func compileDependencyTree(rootPath string, currentService string, services *[]S
             continue
         }
         // recursive call
-        compileDependencyTree(rootPath, dependency, services, lints)
+        Compile(rootPath, dependency, services, lints)
     }
 
     return isValid
 }
 
-func renderMermaidGraph(services []Service) string {
+func MermaidGraph(services []Service) string {
     var graph string
     graph = "```mermaid\ngraph TD;\n"
     for _, service := range services {
