@@ -48,6 +48,51 @@ func Oneshot(rootPath string, name string, dependencies []string) {
 	createDependencies(dependenciesDir, dependencies)
 }
 
+// Longrun creates a longrun service
+func Longrun(rootPath string, name string, dependencies []string) {
+	servicePath := rootPath + "/" + name
+
+	// Create the directory
+	os.Mkdir(servicePath, 0755)
+
+	// Create the type file
+	typeFile := servicePath + "/type"
+	typeFileContent := []byte("longrun\n")
+	os.WriteFile(typeFile, typeFileContent, 0644)
+
+	// Create the run file
+	runFile := servicePath + "/run"
+	runFileContent := []byte(fmt.Sprintf("#!/bin/sh\n\nexec %s\n", strings.Join(os.Args[1:], " ")))
+	os.WriteFile(runFile, runFileContent, 0644)
+
+	// Create the dependencies
+	dependenciesDir := servicePath + "/dependencies.d"
+	createDependencies(dependenciesDir, dependencies)
+}
+
+// Bundle creates a bundle service
+func Bundle(rootPath string, name string, dependencies []string) {
+	servicePath := rootPath + "/" + name
+
+	// Create the directory
+	err := os.Mkdir(servicePath, 0755)
+	if err != nil && !os.IsExist(err) {
+		log.Fatal(err)
+	}
+
+	// Create the type file
+	typeFile := servicePath + "/type"
+	typeFileContent := []byte("bundle\n")
+	err = os.WriteFile(typeFile, typeFileContent, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Create the dependencies
+	dependenciesDir := servicePath + "/contents.d"
+	createDependencies(dependenciesDir, dependencies)
+}
+
 // Remove removes a service
 func Remove(rootPath string, name string) {
 	servicePath := rootPath + "/" + name

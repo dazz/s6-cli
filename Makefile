@@ -7,7 +7,7 @@ build:
 
 .PHONY: run
 run:
-	@go run ./cmd/s6cli $(ARGS)
+	go run ./cmd/s6cli $(ARGS)
 
 .PHONY: lint
 lint:

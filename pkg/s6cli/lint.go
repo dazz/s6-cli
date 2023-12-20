@@ -21,20 +21,20 @@ type Lint struct {
 	Message string
 }
 
-func Compile(rootPath string, currentService string, services *[]Service, lints *[]Lint) bool {
+func Compile(rootPath string, serviceName string, services *[]Service, lints *[]Lint) bool {
 	// Check if the service is already in the services list
-	if containsService(*services, currentService) {
+	if containsService(*services, serviceName) {
 		return true
 	}
 
 	isValid := true
 
 	// Check if the directory exists
-	currentServicePath := rootPath + "/" + currentService
+	currentServicePath := rootPath + "/" + serviceName
 	if _, err := os.Stat(currentServicePath); os.IsNotExist(err) {
 		*lints = append(*lints, Lint{
-			Service: currentService,
-			Message: fmt.Sprintf("directory for %s does not exist", currentService),
+			Service: serviceName,
+			Message: fmt.Sprintf("directory for %s does not exist", serviceName),
 		})
 		return false
 	}
@@ -44,16 +44,16 @@ func Compile(rootPath string, currentService string, services *[]Service, lints 
 	typeFileContent, err := os.ReadFile(typeFile)
 	if err != nil {
 		*lints = append(*lints, Lint{
-			Service: currentService,
-			Message: fmt.Sprintf("type file for \"%s\" does not exist", currentService),
+			Service: serviceName,
+			Message: fmt.Sprintf("type file for \"%s\" does not exist", serviceName),
 		})
 		return false
 	}
 	// Check if the file is empty
 	if len(typeFileContent) == 0 {
 		*lints = append(*lints, Lint{
-			Service: currentService,
-			Message: fmt.Sprintf("type file for \"%s\" is empty", currentService),
+			Service: serviceName,
+			Message: fmt.Sprintf("type file for \"%s\" is empty", serviceName),
 		})
 		return false
 	}
@@ -62,8 +62,8 @@ func Compile(rootPath string, currentService string, services *[]Service, lints 
 	lastChar := typeFileContent[len(typeFileContent)-1]
 	if lastChar != '\n' {
 		*lints = append(*lints, Lint{
-			Service: currentService,
-			Message: fmt.Sprintf("type file for \"%s\" does not end with a newline", currentService),
+			Service: serviceName,
+			Message: fmt.Sprintf("type file for \"%s\" does not end with a newline", serviceName),
 		})
 		isValid = false
 	}
@@ -78,8 +78,8 @@ func Compile(rootPath string, currentService string, services *[]Service, lints 
 		dependenciesDir = currentServicePath + "/dependencies.d"
 	} else {
 		*lints = append(*lints, Lint{
-			Service: currentService,
-			Message: fmt.Sprintf("service type (%s) in type file for %s does not exist", serviceType, currentService),
+			Service: serviceName,
+			Message: fmt.Sprintf("service type (%s) in type file for %s does not exist", serviceType, serviceName),
 		})
 		return false
 	}
@@ -89,8 +89,8 @@ func Compile(rootPath string, currentService string, services *[]Service, lints 
 		runFile := currentServicePath + "/run"
 		if _, err := os.Stat(runFile); os.IsNotExist(err) {
 			*lints = append(*lints, Lint{
-				Service: currentService,
-				Message: fmt.Sprintf("run file for longrun \"%s\" does not exist", currentService),
+				Service: serviceName,
+				Message: fmt.Sprintf("run file for longrun \"%s\" does not exist", serviceName),
 			})
 			isValid = false
 		}
@@ -101,8 +101,8 @@ func Compile(rootPath string, currentService string, services *[]Service, lints 
 		upFile := currentServicePath + "/up"
 		if _, err := os.Stat(upFile); os.IsNotExist(err) {
 			*lints = append(*lints, Lint{
-				Service: currentService,
-				Message: fmt.Sprintf("up file for oneshot \"%s\" does not exist", currentService),
+				Service: serviceName,
+				Message: fmt.Sprintf("up file for oneshot \"%s\" does not exist", serviceName),
 			})
 			isValid = false
 		}
@@ -124,7 +124,7 @@ func Compile(rootPath string, currentService string, services *[]Service, lints 
 
 	// add the service to the services list
 	*services = append(*services, Service{
-		Name:         currentService,
+		Name:         serviceName,
 		Type:         serviceType,
 		Dependencies: dependencies,
 	})
