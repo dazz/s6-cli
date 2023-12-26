@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/dazz/s6-cli/internal/domain/lint"
+	"github.com/dazz/s6-cli/internal/infrastructure/persistence"
 	"log"
 	"os"
 	"time"
@@ -20,7 +22,7 @@ func main() {
 		Version:  "0.0.1",
 		Compiled: time.Now(),
 		Authors: []*cli.Author{
-			&cli.Author{
+			{
 				Name:  "Anne-Julia Seitz",
 				Email: "dazz@c-base",
 			},
@@ -30,13 +32,32 @@ func main() {
 		// so we'll define it up here
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:    "path",
+				Name:    "rootPath",
 				Aliases: []string{"p"},
 				Value:   "/etc/s6-overlay/s6-rc.d",
 				Usage:   "Path to s6-rc.d directory",
 			},
 		},
 		Commands: []*cli.Command{
+			{
+				Name:    "lint-new",
+				Aliases: []string{"ll"},
+				Usage:   "lint directories and files",
+				Action: func(cCtx *cli.Context) error {
+					rootPath := "/etc/s6-overlay/s6-rc.d"
+
+					if cCtx.IsSet("rootPath") {
+						rootPath = cCtx.String("rootPath")
+					}
+
+					repo := persistence.NewFilesystem(rootPath)
+					action := lint.NewAction(repo)
+
+					action.Lint()
+
+					return nil
+				},
+			},
 			{
 				Name:    "lint",
 				Aliases: []string{"l"},
@@ -62,8 +83,8 @@ func main() {
 					fmt.Println("*************** s6-cli Lint Report ***************")
 
 					// print lints
-					for _, lint := range lints {
-						fmt.Printf("* %s: %s\n", lint.Service, lint.Message)
+					for _, l := range lints {
+						fmt.Printf("* %s: %s\n", l.Service, l.Message)
 					}
 
 					fmt.Println("*************** s6-cli Lint Report ***************")

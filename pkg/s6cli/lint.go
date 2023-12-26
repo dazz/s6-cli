@@ -2,7 +2,6 @@ package s6cli
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -109,7 +108,7 @@ func Compile(rootPath string, serviceName string, services *[]Service, lints *[]
 	}
 
 	// get the dependencies
-	files, err := ioutil.ReadDir(dependenciesDir)
+	files, err := os.ReadDir(dependenciesDir)
 	if err != nil {
 		log.Fatal(err)
 	}
