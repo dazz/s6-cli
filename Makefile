@@ -16,3 +16,10 @@ lint:
 .PHONY: mermaid
 mermaid:
 	@go run ./cmd/s6cli $(ARGS) mermaid
+
+.PHONY: test
+test:
+	@go test -v ./...
+
+nix:
+	@nix-shell --show-trace
