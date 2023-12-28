@@ -25,6 +25,7 @@ func NewFilesystem(rootPath string) *Filesystem {
 	}
 }
 
+// All returns all services
 func (fs *Filesystem) All() ([]*service.Service, error) {
 	err := fs.compile(RootService)
 	if err != nil {
@@ -33,9 +34,15 @@ func (fs *Filesystem) All() ([]*service.Service, error) {
 	var services []*service.Service
 	for _, id := range fs.allIds {
 		services = append(services, fs.byId[id])
-		//fmt.Println(id)
 	}
 	return services, nil
+}
+
+func (fs *Filesystem) fileExists(file string) error {
+	if _, err := os.Stat(file); os.IsNotExist(err) {
+		return err
+	}
+	return nil
 }
 
 func (fs *Filesystem) contains(id service.Id) bool {
@@ -64,7 +71,7 @@ func (fs *Filesystem) compile(id service.Id) error {
 	fs.allIds = append(fs.allIds, id)
 
 	// Check if the directory exists
-	if _, err := os.Stat(s.Path); os.IsNotExist(err) {
+	if err := fs.fileExists(s.Path); err != nil {
 		s.AddLint(fmt.Sprintf("invalid directory: path %s does not exist", s.Path))
 		return nil
 	}

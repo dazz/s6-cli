@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/dazz/s6-cli/internal/domain/service"
 	"log"
+	"strings"
 )
 
 type Action struct {
@@ -16,18 +17,21 @@ func NewAction(repository service.Repository) *Action {
 	}
 }
 
-func (a *Action) Lint() bool {
+func (a *Action) Lint() string {
 	// do all the fun stuff here
 	services, err := a.repository.All()
 	if err != nil {
 		log.Println(err)
 	}
 
+	var output []string
+
 	for _, s := range services {
-		fmt.Println("* " + s.Id)
+		output = append(output, fmt.Sprintf("* %s", s.Id))
+
 		for _, l := range s.Lints {
-			fmt.Println("  * " + l)
+			output = append(output, fmt.Sprintf("*  %s", l))
 		}
 	}
-	return false
+	return strings.Join(output, "\n")
 }

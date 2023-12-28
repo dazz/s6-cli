@@ -27,17 +27,23 @@ func NewService(id Id, rootPath string) *Service {
 	return &Service{
 		Id:    id,
 		Path:  rootPath + "/" + string(id),
-		Valid: true,
-		Lints: []Lint{},
+		Lints: make([]Lint, 0),
 	}
 }
 
 func (s *Service) AddLint(lint string) {
+	if lint == "" {
+		return
+	}
+
 	s.Lints = append(s.Lints, Lint(lint))
-	s.Valid = false
 }
 
 func (s *Service) DependencyDir() (string, error) {
+	if s.Type == "" {
+		return "", errors.New("invalid service type, set type of service")
+	}
+
 	if s.Type == TypeBundle {
 		return s.Path + "/contents.d", nil
 	}
