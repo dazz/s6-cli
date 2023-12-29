@@ -1,4 +1,4 @@
-package lint
+package mermaid
 
 import (
 	"fmt"
@@ -18,20 +18,20 @@ func NewAction(repository service.Repository) *Action {
 }
 
 func (a *Action) Output() string {
-	// do all the fun stuff here
+	// do all the fun stuff hereLint
 	services, err := a.repository.All()
 	if err != nil {
 		log.Println(err)
 	}
 
 	var output []string
-
+	output = append(output, "```mermaid")
+	output = append(output, "graph TD;")
 	for _, s := range services {
-		output = append(output, fmt.Sprintf("* %s", s.Id))
-
-		for _, l := range s.Lints {
-			output = append(output, fmt.Sprintf("*  %s", l))
+		for _, dependency := range s.Dependencies {
+			output = append(output, fmt.Sprintf("    %s --> %s", s.Id, dependency))
 		}
 	}
+	output = append(output, "```")
 	return strings.Join(output, "\n")
 }

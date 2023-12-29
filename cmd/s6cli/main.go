@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/dazz/s6-cli/internal/domain/lint"
+	"github.com/dazz/s6-cli/internal/domain/mermaid"
 	"github.com/dazz/s6-cli/internal/infrastructure/persistence"
 	"log"
 	"os"
@@ -13,10 +14,8 @@ import (
 	"github.com/dazz/s6-cli/pkg/s6cli"
 )
 
-func init() {
-}
-
 func main() {
+	rootPath := "/etc/s6-overlay/s6-rc.d"
 	app := &cli.App{
 		Name:     "s6-cli",
 		Version:  "0.0.1",
@@ -44,8 +43,6 @@ func main() {
 				Aliases: []string{"l"},
 				Usage:   "lint directories and files",
 				Action: func(cCtx *cli.Context) error {
-					rootPath := "/etc/s6-overlay/s6-rc.d"
-
 					if cCtx.IsSet("rootPath") {
 						rootPath = cCtx.String("rootPath")
 					}
@@ -53,7 +50,7 @@ func main() {
 					repo := persistence.NewFilesystem(rootPath)
 					action := lint.NewAction(repo)
 
-					fmt.Println(action.Lint())
+					fmt.Println(action.Output())
 
 					return nil
 				},
@@ -63,24 +60,14 @@ func main() {
 				Aliases: []string{"m"},
 				Usage:   "document s6 service dependencies in mermaid syntax",
 				Action: func(cCtx *cli.Context) error {
-					path := "/etc/s6-overlay/s6-rc.d"
-					firstBundle := "user"
-
-					if cCtx.IsSet("path") {
-						path = cCtx.String("path")
-					}
-					// check if the directory exists
-					if _, err := os.Stat(path); os.IsNotExist(err) {
-						fmt.Printf("Directory %s does not exist\n", path)
-						os.Exit(1)
+					if cCtx.IsSet("rootPath") {
+						rootPath = cCtx.String("rootPath")
 					}
 
-					// compile dependency tree
-					var services []s6cli.Service
-					var lints []s6cli.Lint
-					s6cli.Compile(path, firstBundle, &services, &lints)
+					repo := persistence.NewFilesystem(rootPath)
+					action := mermaid.NewAction(repo)
 
-					fmt.Printf(s6cli.MermaidGraph(services))
+					fmt.Println(action.Output())
 
 					return nil
 				},

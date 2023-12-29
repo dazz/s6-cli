@@ -1,4 +1,4 @@
-package lint
+package mermaid
 
 import (
 	"github.com/dazz/s6-cli/internal/infrastructure/persistence/mock"
