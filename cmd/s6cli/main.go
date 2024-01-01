@@ -2,16 +2,17 @@ package main
 
 import (
 	"fmt"
+	"github.com/dazz/s6-cli/internal/domain/create"
 	"github.com/dazz/s6-cli/internal/domain/lint"
 	"github.com/dazz/s6-cli/internal/domain/mermaid"
-	"github.com/dazz/s6-cli/internal/infrastructure/persistence"
+	"github.com/dazz/s6-cli/internal/domain/remove"
+	"github.com/dazz/s6-cli/internal/domain/service"
+	"github.com/dazz/s6-cli/internal/infrastructure/persistence/filesystem"
 	"log"
 	"os"
 	"time"
 
 	"github.com/urfave/cli/v2"
-
-	"github.com/dazz/s6-cli/pkg/s6cli"
 )
 
 func main() {
@@ -47,10 +48,10 @@ func main() {
 						rootPath = cCtx.String("rootPath")
 					}
 
-					repo := persistence.NewFilesystem(rootPath)
-					action := lint.NewAction(repo)
+					repo := filesystem.NewFilesystem(rootPath)
+					command := lint.NewCommand(repo)
 
-					fmt.Println(action.Output())
+					fmt.Println(command.Execute())
 
 					return nil
 				},
@@ -64,10 +65,10 @@ func main() {
 						rootPath = cCtx.String("rootPath")
 					}
 
-					repo := persistence.NewFilesystem(rootPath)
-					action := mermaid.NewAction(repo)
+					repo := filesystem.NewFilesystem(rootPath)
+					command := mermaid.NewCommand(repo)
 
-					fmt.Println(action.Output())
+					fmt.Println(command.Execute())
 
 					return nil
 				},
@@ -76,42 +77,48 @@ func main() {
 				Name:      "create",
 				Aliases:   []string{"c"},
 				Usage:     "create a service",
-				ArgsUsage: "[type: (o|l|b)] [name]",
+				ArgsUsage: "[type: (o|l|b)] [id]",
 				Flags: []cli.Flag{
 					&cli.BoolFlag{Value: false, Name: "overwrite", Aliases: []string{"o"}, Usage: "Ignore existing files and directories"},
 				},
 				Action: func(cCtx *cli.Context) error {
-					path := "/etc/s6-overlay/s6-rc.d"
-					if cCtx.IsSet("path") {
-						path = cCtx.String("path")
+					rootPath := "/etc/s6-overlay/s6-rc.d"
+					if cCtx.IsSet("rootPath") {
+						rootPath = cCtx.String("rootPath")
 					}
 					// check if the directory exists
-					if _, err := os.Stat(path); os.IsNotExist(err) {
-						fmt.Printf("Directory %s does not exist\n", path)
+					if _, err := os.Stat(rootPath); os.IsNotExist(err) {
+						fmt.Printf("Directory %s does not exist\n", rootPath)
 						os.Exit(1)
 					}
 
-					serviceType := ""
-					if cCtx.Args().Get(0) == "o" || cCtx.Args().Get(0) == "l" || cCtx.Args().Get(0) == "b" {
-						serviceType = cCtx.Args().Get(0)
-					} else {
+					var serviceType service.Type
+					switch t := cCtx.Args().Get(0); t {
+					case "o":
+						serviceType = service.TypeOneshot
+					case "l":
+						serviceType = service.TypeLongrun
+					case "b":
+						serviceType = service.TypeBundle
+					default:
 						fmt.Print("Arg type must not be empty and one of 'o', 'l' or 'b'\n")
 						os.Exit(1)
 					}
 
-					name := ""
-					if cCtx.Args().Get(1) != "" {
-						name = cCtx.Args().Get(1)
+					var id service.Id
+					if idArg := cCtx.Args().Get(1); idArg != "" {
+						id = service.Id(idArg)
 					} else {
-						fmt.Print("Arg name must not be empty\n")
+						fmt.Println("Arg idArg must not be empty")
 						os.Exit(1)
 					}
 
-					fmt.Printf("Create a service %s with type %s\n", name, serviceType)
+					fmt.Printf("Create a service %s with type %s\n", id, serviceType)
 
-					if serviceType == "o" {
-						s6cli.Oneshot(path, name, []string{"base"})
-					}
+					repo := filesystem.NewFilesystem(rootPath)
+					command := create.NewCommand(repo, id, serviceType)
+
+					fmt.Println(command.Execute())
 
 					return nil
 				},
@@ -122,25 +129,33 @@ func main() {
 				Usage:     "remove a service",
 				ArgsUsage: "[name]",
 				Action: func(cCtx *cli.Context) error {
-					path := "/etc/s6-overlay/s6-rc.d"
-					if cCtx.IsSet("path") {
-						path = cCtx.String("path")
+					rootPath := "/etc/s6-overlay/s6-rc.d"
+					if cCtx.IsSet("rootPath") {
+						rootPath = cCtx.String("rootPath")
 					}
 					// check if the directory exists
-					if _, err := os.Stat(path); os.IsNotExist(err) {
-						fmt.Printf("Directory %s does not exist\n", path)
+					if _, err := os.Stat(rootPath); os.IsNotExist(err) {
+						fmt.Println("Directory does not exist: " + rootPath)
 						os.Exit(1)
 					}
 
-					name := ""
-					if cCtx.Args().Get(0) != "" {
-						name = cCtx.Args().Get(0)
+					var id service.Id
+					if idArg := cCtx.Args().Get(0); idArg != "" {
+						id = service.Id(idArg)
 					} else {
-						fmt.Print("Arg name must not be empty\n")
+						fmt.Println("Arg idArg must not be empty")
 						os.Exit(1)
 					}
 
-					s6cli.Remove(path, name)
+					repo := filesystem.NewFilesystem(rootPath)
+					command := remove.NewCommand(repo, id)
+
+					removed, err := command.Execute()
+					if err == nil {
+						fmt.Println("Successful removed service " + removed)
+					} else {
+
+					}
 
 					return nil
 				},
