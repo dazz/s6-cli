@@ -1,11 +1,11 @@
-package persistence
+package filesystem
 
 import (
 	"errors"
 	"fmt"
 	"github.com/dazz/s6-cli/internal/domain/service"
-	"log"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -18,39 +18,14 @@ type Filesystem struct {
 }
 
 func NewFilesystem(rootPath string) *Filesystem {
+
+	// TODO check if rootPath exists
+
 	return &Filesystem{
 		rootPath: rootPath,
 		byId:     make(map[service.Id]*service.Service),
 		allIds:   []service.Id{},
 	}
-}
-
-// All returns all services
-func (fs *Filesystem) All() ([]*service.Service, error) {
-	err := fs.compile(RootService)
-	if err != nil {
-		log.Println(err)
-	}
-	var services []*service.Service
-	for _, id := range fs.allIds {
-		services = append(services, fs.byId[id])
-	}
-	return services, nil
-}
-
-func (fs *Filesystem) fileExists(file string) error {
-	if _, err := os.Stat(file); os.IsNotExist(err) {
-		return err
-	}
-	return nil
-}
-
-func (fs *Filesystem) contains(id service.Id) bool {
-	_, ok := fs.byId[id]
-	if ok {
-		return true
-	}
-	return false
 }
 
 // compile all folders and directories to a list of services we can work with
@@ -64,7 +39,7 @@ func (fs *Filesystem) compile(id service.Id) error {
 		return nil
 	}
 
-	s := service.NewService(id, fs.rootPath)
+	s := service.NewService(id)
 
 	// add the service to the services list
 	fs.byId[id] = s
@@ -85,7 +60,7 @@ func (fs *Filesystem) compile(id service.Id) error {
 
 	// check if the run file exists
 	if serviceType == service.TypeLongrun {
-		runFile := s.Path + "/run"
+		runFile := fs.ServicePath(id) + "/run"
 		if _, err := os.Stat(runFile); os.IsNotExist(err) {
 			s.AddLint("run file for longrun does not exist")
 		}
@@ -93,14 +68,14 @@ func (fs *Filesystem) compile(id service.Id) error {
 
 	// check if the up file exists
 	if serviceType == "oneshot" {
-		upFile := s.Path + "/up"
+		upFile := fs.ServicePath(id) + "/up"
 		if _, err := os.Stat(upFile); os.IsNotExist(err) {
 			s.AddLint("up file for oneshot does not exist")
 		}
 	}
 
 	// check if the dependency directory exists
-	dependencyDir, err := s.DependencyDir()
+	dependencyDir, err := fs.ServiceDependencyPath(s)
 	if err != nil {
 		s.AddLint(fmt.Sprintf("service type (%s) in type file for %s does not exist", serviceType, id))
 	}
@@ -135,7 +110,7 @@ func (fs *Filesystem) compile(id service.Id) error {
 
 func (fs *Filesystem) serviceType(s *service.Service) (service.Type, error) {
 	// check the type file and content
-	typeFileContent, err := os.ReadFile(s.Path + "/type")
+	typeFileContent, err := os.ReadFile(fs.ServicePath(s.Id) + "/type")
 	if err != nil {
 		s.AddLint(fmt.Sprintf("type file for \"%s\" does not exist", s.Id))
 		return "", err
@@ -160,4 +135,72 @@ func (fs *Filesystem) serviceType(s *service.Service) (service.Type, error) {
 	}
 
 	return "", errors.New(fmt.Sprintf("invalid type in %s/type file specified", s.Id))
+}
+
+func (fs *Filesystem) findDependenciesById(id service.Id) ([]string, error) {
+	var resultPaths []string
+
+	err := filepath.Walk(fs.rootPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Check if the current item is a regular file and matches the target file name
+		if !info.IsDir() && info.Name() == string(id) {
+			resultPaths = append(resultPaths, path)
+		}
+
+		return nil
+	})
+
+	return resultPaths, err
+}
+
+func (fs *Filesystem) fileExists(file string) error {
+	if _, err := os.Stat(file); os.IsNotExist(err) {
+		return err
+	}
+	return nil
+}
+
+func (fs *Filesystem) getServiceType(id service.Id) string {
+	typeFile := fs.ServicePath(id) + "/type"
+	typeFileContent, err := os.ReadFile(typeFile)
+	if err != nil {
+		fmt.Println("Error reading type file:", err)
+		return ""
+	}
+	return strings.ReplaceAll(string(typeFileContent), "\n", "")
+}
+
+func (fs *Filesystem) ServiceScriptFilePath(id service.Id) (string, error) {
+	// Get the absolute path of the specified directory
+	absoluteScriptPath, err := filepath.Abs(fs.rootPath + "/../scripts")
+	if err != nil {
+		return "", errors.New(fmt.Sprintf("Error getting absolute path: %s", err))
+	}
+	return fmt.Sprintf("%s/%s", absoluteScriptPath, id), nil
+}
+
+func (fs *Filesystem) ServicePath(id service.Id) string {
+	if id == "" {
+		return fs.rootPath
+	}
+	return fs.rootPath + "/" + string(id)
+}
+
+func (fs *Filesystem) ServiceDependencyPath(s *service.Service) (string, error) {
+	if s.Type == "" {
+		return "", errors.New("invalid service type, set type of service")
+	}
+
+	switch s.Type {
+	case service.TypeLongrun:
+		return fs.ServicePath(s.Id) + "/dependencies.d", nil
+	case service.TypeOneshot:
+		return fs.ServicePath(s.Id) + "/dependencies.d", nil
+	case service.TypeBundle:
+		return fs.ServicePath(s.Id) + "/contents.d", nil
+	}
+	return "", errors.New("invalid service type")
 }

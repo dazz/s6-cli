@@ -6,21 +6,12 @@ import (
 
 const rootPath = "/tmp/path"
 
-func TestServiceFactory(t *testing.T) {
-	service := NewService("test", rootPath)
+func Test_ServiceFactory(t *testing.T) {
+	service := NewService("test")
 
 	t.Run("service Id is set by constructor", func(t *testing.T) {
 		got := service.Id
 		want := Id("test")
-
-		if got != want {
-			t.Errorf("got %s want %s", got, want)
-		}
-	})
-
-	t.Run("service Path is set by constructor", func(t *testing.T) {
-		got := service.Path
-		want := rootPath + "/test"
 
 		if got != want {
 			t.Errorf("got %s want %s", got, want)
@@ -36,8 +27,8 @@ func TestServiceFactory(t *testing.T) {
 	})
 }
 
-func TestService_AddLint(t *testing.T) {
-	service := NewService("test", rootPath)
+func Test_Service_AddLint(t *testing.T) {
+	service := NewService("test")
 
 	service.AddLint("test")
 
@@ -60,55 +51,14 @@ func TestService_AddLint(t *testing.T) {
 	})
 }
 
-func TestService_AddDependency(t *testing.T) {
-	service := NewService("test", rootPath)
+func Test_Service_AddDependency(t *testing.T) {
+	s := NewService("test")
 
-	service.AddDependency("test")
+	t.Run("adds a dependency to the createDependencies", func(t *testing.T) {
+		s.AddDependency("test")
 
-	t.Run("AddDependency adds a dependency to the Dependencies", func(t *testing.T) {
-		got := service.Dependencies
-
-		if len(got) != 1 {
+		if got := s.Dependencies; len(got) != 1 {
 			t.Errorf("got %s want 1", got)
-		}
-	})
-}
-
-func TestService_DependencyDir(t *testing.T) {
-	service := NewService("test", rootPath)
-
-	t.Run("service.Type is not set", func(t *testing.T) {
-		_, err := service.DependencyDir()
-
-		if err.Error() != "invalid service type, set type of service" {
-			t.Errorf("%s", err)
-		}
-	})
-
-	service.Type = TypeBundle
-	t.Run("DependencyDir for bundle", func(t *testing.T) {
-		got, _ := service.DependencyDir()
-
-		if got != "/tmp/path/test/contents.d" {
-			t.Errorf("%s", got)
-		}
-	})
-
-	service.Type = TypeOneshot
-	t.Run("DependencyDir for oneshot", func(t *testing.T) {
-		got, _ := service.DependencyDir()
-
-		if got != "/tmp/path/test/dependencies.d" {
-			t.Errorf("%s", got)
-		}
-	})
-
-	service.Type = TypeLongrun
-	t.Run("DependencyDir for longrun", func(t *testing.T) {
-		got, _ := service.DependencyDir()
-
-		if got != "/tmp/path/test/dependencies.d" {
-			t.Errorf("%s", got)
 		}
 	})
 }
