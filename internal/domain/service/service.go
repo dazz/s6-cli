@@ -1,3 +1,5 @@
+// Package service contains the domain layer for the service struct.
+// The service struct is the main entity of the application.
 package service
 
 const (

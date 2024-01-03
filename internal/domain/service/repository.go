@@ -7,13 +7,29 @@ type Repository interface {
 	// One returns one service
 	One(id Id) (*Service, error)
 
-	// Oneshot persists one service
-	Oneshot(service *Service) error
-	// Longrun persists one service
-	Longrun(service *Service) error
-	// Bundle persists one service
-	Bundle(service *Service) error
+	RemoveDirectory(path string) error
 
-	// Remove removes a service
-	Remove(service *Service) error
+	RemoveFile(path string) error
+
+	ServiceScriptFilePath(id Id) (string, error)
+
+	ServicePath(id Id) string
+
+	ServiceDependenciesPath(s *Service) (string, error)
+
+	FileExists(file string) bool
+
+	AllFileExists(files []string) bool
+
+	AnyFileExists(files []string) bool
+
+	CreateDependencies(service *Service) error
+
+	FindDependenciesById(id Id) ([]string, error)
+
+	CreateTypeFile(*Service) error
+
+	CreateFile(path string, content []byte, perm int) error
+
+	CreateDirectory(path string, perm int) error
 }

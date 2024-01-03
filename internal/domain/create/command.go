@@ -1,8 +1,11 @@
 package create
 
 import (
+	"errors"
 	"github.com/dazz/s6-cli/internal/domain/service"
 )
+
+const defaultDependency = "base"
 
 type Command struct {
 	repository  service.Repository
@@ -13,30 +16,32 @@ type Command struct {
 func NewCommand(repository service.Repository, id service.Id, serviceType service.Type) *Command {
 	return &Command{
 		repository:  repository,
-		serviceType: serviceType,
 		id:          id,
+		serviceType: serviceType,
 	}
 }
 
 func (c *Command) Execute() (string, error) {
 
 	s := service.NewService(c.id)
+	s.Type = c.serviceType
+	s.Dependencies = []service.Id{defaultDependency}
+
+	var steps service.StepIterator
+
 	switch c.serviceType {
 	case service.TypeOneshot:
-		s.Type = service.TypeOneshot
-		if err := c.repository.Oneshot(s); err != nil {
-			return "", err
-		}
+		steps = OneshotSteps(c.repository, s)
 	case service.TypeLongrun:
-		s.Type = service.TypeLongrun
-		if err := c.repository.Longrun(s); err != nil {
-			return "", err
-		}
+		steps = LongrunSteps(c.repository, s)
 	case service.TypeBundle:
-		s.Type = service.TypeLongrun
-		if err := c.repository.Bundle(s); err != nil {
-			return "", err
-		}
+		steps = BundleSteps(c.repository, s)
+	default:
+		return "", errors.New("unknown service type")
+	}
+
+	if err := Create(steps); err != nil {
+		return "", err
 	}
 
 	return string(c.id), nil

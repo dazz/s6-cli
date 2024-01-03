@@ -1,6 +1,7 @@
 package remove
 
 import (
+	"errors"
 	"github.com/dazz/s6-cli/internal/domain/service"
 )
 
@@ -24,8 +25,22 @@ func (c *Command) Execute() (string, error) {
 		return "", err
 	}
 
-	if err := c.repository.Remove(s); err != nil {
+	var steps service.StepIterator
+
+	switch s.Type {
+	case service.TypeOneshot:
+		steps = OneshotSteps(c.repository, s)
+	case service.TypeLongrun:
+		steps = LongrunSteps(c.repository, s)
+	case service.TypeBundle:
+		steps = BundleSteps(c.repository, s)
+	default:
+		return "", errors.New("unknown service type")
+	}
+
+	if err := Remove(steps); err != nil {
 		return "", err
 	}
+
 	return string(c.id), nil
 }

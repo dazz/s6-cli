@@ -25,7 +25,7 @@ func Test_ServiceDependencyPath(t *testing.T) {
 	s := service.NewService("test")
 
 	t.Run("Type is not set", func(t *testing.T) {
-		_, err := repo.ServiceDependencyPath(s)
+		_, err := repo.ServiceDependenciesPath(s)
 
 		if err.Error() != "invalid service type, set type of service" {
 			t.Errorf("%s", err)
@@ -34,7 +34,7 @@ func Test_ServiceDependencyPath(t *testing.T) {
 
 	t.Run("for bundle", func(t *testing.T) {
 		s.Type = service.TypeBundle
-		got, _ := repo.ServiceDependencyPath(s)
+		got, _ := repo.ServiceDependenciesPath(s)
 
 		if got != "../../../../examples/s6-overlay/s6-rc.d/test/contents.d" {
 			t.Errorf("%s", got)
@@ -43,7 +43,7 @@ func Test_ServiceDependencyPath(t *testing.T) {
 
 	t.Run("for oneshot", func(t *testing.T) {
 		s.Type = service.TypeOneshot
-		got, _ := repo.ServiceDependencyPath(s)
+		got, _ := repo.ServiceDependenciesPath(s)
 
 		if got != "../../../../examples/s6-overlay/s6-rc.d/test/dependencies.d" {
 			t.Errorf("%s", got)
@@ -52,7 +52,7 @@ func Test_ServiceDependencyPath(t *testing.T) {
 
 	t.Run("for longrun", func(t *testing.T) {
 		s.Type = service.TypeLongrun
-		got, _ := repo.ServiceDependencyPath(s)
+		got, _ := repo.ServiceDependenciesPath(s)
 
 		if got != "../../../../examples/s6-overlay/s6-rc.d/test/dependencies.d" {
 			t.Errorf("%s", got)

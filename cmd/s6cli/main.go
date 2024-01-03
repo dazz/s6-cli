@@ -51,7 +51,11 @@ func main() {
 					repo := filesystem.NewFilesystem(rootPath)
 					command := lint.NewCommand(repo)
 
-					fmt.Println(command.Execute())
+					execute, err := command.Execute()
+					if err != nil {
+						fmt.Println(err)
+					}
+					fmt.Println(execute)
 
 					return nil
 				},
@@ -68,7 +72,12 @@ func main() {
 					repo := filesystem.NewFilesystem(rootPath)
 					command := mermaid.NewCommand(repo)
 
-					fmt.Println(command.Execute())
+					execute, err := command.Execute()
+					if err != nil {
+
+					}
+
+					fmt.Println(execute)
 
 					return nil
 				},
@@ -113,12 +122,18 @@ func main() {
 						os.Exit(1)
 					}
 
-					fmt.Printf("Create a service %s with type %s\n", id, serviceType)
+					fmt.Printf("Creating a service %q with type %s\n", id, serviceType)
 
 					repo := filesystem.NewFilesystem(rootPath)
 					command := create.NewCommand(repo, id, serviceType)
 
-					fmt.Println(command.Execute())
+					result, err := command.Execute()
+					if err != nil {
+						fmt.Println(err)
+						os.Exit(1)
+					}
+					fmt.Printf("Successful created service %q\n", result)
+					return nil
 
 					return nil
 				},
@@ -150,13 +165,12 @@ func main() {
 					repo := filesystem.NewFilesystem(rootPath)
 					command := remove.NewCommand(repo, id)
 
-					removed, err := command.Execute()
-					if err == nil {
-						fmt.Println("Successful removed service " + removed)
-					} else {
-
+					result, err := command.Execute()
+					if err != nil {
+						fmt.Println(err)
+						os.Exit(1)
 					}
-
+					fmt.Printf("Successful removed service %q\n", result)
 					return nil
 				},
 			},

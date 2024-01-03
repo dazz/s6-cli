@@ -26,10 +26,12 @@ func (a *Command) Execute() (string, error) {
 	var output []string
 
 	for _, s := range services {
+		if len(s.Lints) == 0 {
+			continue
+		}
 		output = append(output, fmt.Sprintf("* %s", s.Id))
-
 		for _, l := range s.Lints {
-			output = append(output, fmt.Sprintf("*  %s", l))
+			output = append(output, fmt.Sprintf("  * %s", l))
 		}
 	}
 	return strings.Join(output, "\n"), nil

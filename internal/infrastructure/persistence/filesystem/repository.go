@@ -19,7 +19,7 @@ type Filesystem struct {
 
 func NewFilesystem(rootPath string) *Filesystem {
 
-	// TODO check if rootPath exists
+	// TODO: check if rootPath is valid
 
 	return &Filesystem{
 		rootPath: rootPath,
@@ -46,7 +46,7 @@ func (fs *Filesystem) compile(id service.Id) error {
 	fs.allIds = append(fs.allIds, id)
 
 	// Check if the directory exists
-	if err := fs.fileExists(s.Path); err != nil {
+	if fs.FileExists(fs.ServicePath(id)) == false {
 		s.AddLint(fmt.Sprintf("invalid directory: path %s does not exist", s.Path))
 		return nil
 	}
@@ -75,7 +75,7 @@ func (fs *Filesystem) compile(id service.Id) error {
 	}
 
 	// check if the dependency directory exists
-	dependencyDir, err := fs.ServiceDependencyPath(s)
+	dependencyDir, err := fs.ServiceDependenciesPath(s)
 	if err != nil {
 		s.AddLint(fmt.Sprintf("service type (%s) in type file for %s does not exist", serviceType, id))
 	}
@@ -137,7 +137,7 @@ func (fs *Filesystem) serviceType(s *service.Service) (service.Type, error) {
 	return "", errors.New(fmt.Sprintf("invalid type in %s/type file specified", s.Id))
 }
 
-func (fs *Filesystem) findDependenciesById(id service.Id) ([]string, error) {
+func (fs *Filesystem) FindDependenciesById(id service.Id) ([]string, error) {
 	var resultPaths []string
 
 	err := filepath.Walk(fs.rootPath, func(path string, info os.FileInfo, err error) error {
@@ -156,11 +156,29 @@ func (fs *Filesystem) findDependenciesById(id service.Id) ([]string, error) {
 	return resultPaths, err
 }
 
-func (fs *Filesystem) fileExists(file string) error {
+func (fs *Filesystem) FileExists(file string) bool {
 	if _, err := os.Stat(file); os.IsNotExist(err) {
-		return err
+		return false
 	}
-	return nil
+	return true
+}
+
+func (fs *Filesystem) AllFileExists(files []string) bool {
+	for _, file := range files {
+		if fs.FileExists(file) == false {
+			return false
+		}
+	}
+	return true
+}
+
+func (fs *Filesystem) AnyFileExists(files []string) bool {
+	for _, file := range files {
+		if fs.FileExists(file) == true {
+			return true
+		}
+	}
+	return false
 }
 
 func (fs *Filesystem) getServiceType(id service.Id) string {
@@ -175,11 +193,16 @@ func (fs *Filesystem) getServiceType(id service.Id) string {
 
 func (fs *Filesystem) ServiceScriptFilePath(id service.Id) (string, error) {
 	// Get the absolute path of the specified directory
-	absoluteScriptPath, err := filepath.Abs(fs.rootPath + "/../scripts")
+	absoluteScriptPath, err := fs.ScriptPath()
 	if err != nil {
 		return "", errors.New(fmt.Sprintf("Error getting absolute path: %s", err))
 	}
 	return fmt.Sprintf("%s/%s", absoluteScriptPath, id), nil
+}
+
+func (fs *Filesystem) ScriptPath() (string, error) {
+	absoluteScriptPath, err := filepath.Abs(fs.rootPath + "/../scripts")
+	return absoluteScriptPath, err
 }
 
 func (fs *Filesystem) ServicePath(id service.Id) string {
@@ -189,7 +212,7 @@ func (fs *Filesystem) ServicePath(id service.Id) string {
 	return fs.rootPath + "/" + string(id)
 }
 
-func (fs *Filesystem) ServiceDependencyPath(s *service.Service) (string, error) {
+func (fs *Filesystem) ServiceDependenciesPath(s *service.Service) (string, error) {
 	if s.Type == "" {
 		return "", errors.New("invalid service type, set type of service")
 	}
