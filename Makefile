@@ -63,10 +63,12 @@ nix:
 # RUN COMMANDS OF CLI WITH DEFAULT ARGS
 # ==================================================================================== #
 
+## lint: lint s6-overlay folders and files
 .PHONY: lint
 lint:
 	@go run ./cmd/s6cli $(ARGS) lint
 
+## mermaid: generate mermaid graph
 .PHONY: mermaid
 mermaid:
 	@go run ./cmd/s6cli $(ARGS) mermaid

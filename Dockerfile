@@ -1,20 +1,19 @@
-# Stage 1: Build the Go binary
-FROM golang:1.17 AS builder
+# build stage
+FROM golang:1.20.12-alpine3.19 as builder
 
-# Set the working directory inside the container
+ENV GO111MODULE=on
+
 WORKDIR /app
 
-# Copy the go.mod and go.sum files to download dependencies
-COPY go.mod go.sum ./
+COPY go.mod .
+COPY go.sum .
 
-# Download dependencies
 RUN go mod download
 
-# Copy the source code into the container
 COPY . .
 
-# Build the Go binary
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o s6-cli .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o s6-cli -v ./cmd/s6cli
+
 
 # Stage 2: Create a minimal image for running the binary
 FROM scratch
