@@ -31,7 +31,7 @@ func (fs *Filesystem) CreateDependencies(service *service.Service) error {
 	if err != nil {
 		return err
 	}
-	if fs.FileExists(dependenciesPath) == false {
+	if !fs.FileExists(dependenciesPath) {
 		return errors.New("dependencies path does not exist")
 	}
 

@@ -74,7 +74,7 @@ func main() {
 
 					execute, err := command.Execute()
 					if err != nil {
-
+						return err
 					}
 
 					fmt.Println(execute)
@@ -133,7 +133,6 @@ func main() {
 						os.Exit(1)
 					}
 					fmt.Printf("Successful created service %q\n", result)
-					return nil
 
 					return nil
 				},

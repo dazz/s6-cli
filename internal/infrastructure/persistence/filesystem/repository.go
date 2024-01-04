@@ -46,7 +46,7 @@ func (fs *Filesystem) compile(id service.Id) error {
 	fs.allIds = append(fs.allIds, id)
 
 	// Check if the directory exists
-	if fs.FileExists(fs.ServicePath(id)) == false {
+	if !fs.FileExists(fs.ServicePath(id)) {
 		s.AddLint(fmt.Sprintf("invalid directory: path %s does not exist", s.Path))
 		return nil
 	}
@@ -134,7 +134,7 @@ func (fs *Filesystem) serviceType(s *service.Service) (service.Type, error) {
 		}
 	}
 
-	return "", errors.New(fmt.Sprintf("invalid type in %s/type file specified", s.Id))
+	return "", fmt.Errorf("invalid type in %s/type file specified", s.Id)
 }
 
 func (fs *Filesystem) FindDependenciesById(id service.Id) ([]string, error) {
@@ -165,7 +165,7 @@ func (fs *Filesystem) FileExists(file string) bool {
 
 func (fs *Filesystem) AllFileExists(files []string) bool {
 	for _, file := range files {
-		if fs.FileExists(file) == false {
+		if !fs.FileExists(file) {
 			return false
 		}
 	}
@@ -174,28 +174,18 @@ func (fs *Filesystem) AllFileExists(files []string) bool {
 
 func (fs *Filesystem) AnyFileExists(files []string) bool {
 	for _, file := range files {
-		if fs.FileExists(file) == true {
+		if fs.FileExists(file) {
 			return true
 		}
 	}
 	return false
 }
 
-func (fs *Filesystem) getServiceType(id service.Id) string {
-	typeFile := fs.ServicePath(id) + "/type"
-	typeFileContent, err := os.ReadFile(typeFile)
-	if err != nil {
-		fmt.Println("Error reading type file:", err)
-		return ""
-	}
-	return strings.ReplaceAll(string(typeFileContent), "\n", "")
-}
-
 func (fs *Filesystem) ServiceScriptFilePath(id service.Id) (string, error) {
 	// Get the absolute path of the specified directory
 	absoluteScriptPath, err := fs.ScriptPath()
 	if err != nil {
-		return "", errors.New(fmt.Sprintf("Error getting absolute path: %s", err))
+		return "", fmt.Errorf("error getting absolute path: %s", err)
 	}
 	return fmt.Sprintf("%s/%s", absoluteScriptPath, id), nil
 }

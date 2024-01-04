@@ -34,8 +34,5 @@ func (fs *Filesystem) One(id service.Id) (*service.Service, error) {
 // All returns all services
 func (fs *Filesystem) contains(id service.Id) bool {
 	_, ok := fs.byId[id]
-	if ok {
-		return true
-	}
-	return false
+	return ok
 }
