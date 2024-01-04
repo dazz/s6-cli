@@ -31,6 +31,9 @@ audit:
 	go run golang.org/x/vuln/cmd/govulncheck@latest ./...
 	go test -race -buildvcs -vet=off ./...
 
+coverage:
+	@go test -coverprofile=coverage.out -v ./...
+	@go tool cover -html=coverage.out
 
 # ==================================================================================== #
 # DEVELOPMENT
