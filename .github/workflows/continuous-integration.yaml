@@ -17,8 +17,8 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
       - name: Install dependencies
-        run: go get .
+        run: go mod download
       - name: Build
-        run: go build -v ./...
-      - name: Test with the Go CLI
-        run: go test
+        run: go build -o s6-cli -v ./cmd/s6cli
+      - name: Test
+        run: go test -v ./...
