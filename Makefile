@@ -1,3 +1,4 @@
+BINARY_NAME=s6-cli
 S6_PATH := ./examples/s6-overlay/s6-rc.d
 ARGS := -p $(S6_PATH)
 
@@ -8,9 +9,6 @@ ARGS := -p $(S6_PATH)
 help:
 	@echo 'Usage:'
 	@sed -n 's/^##//p' ${MAKEFILE_LIST} | column -t -s ':' |  sed -e 's/^/ /'
-
-
-
 
 # ==================================================================================== #
 # QUALITY CONTROL
@@ -31,10 +29,6 @@ audit:
 	go run golang.org/x/vuln/cmd/govulncheck@latest ./...
 	go test -race -buildvcs -vet=off ./...
 
-coverage:
-	@go test -coverprofile=coverage.out -v ./...
-	@go tool cover -html=coverage.out
-
 # ==================================================================================== #
 # DEVELOPMENT
 # ==================================================================================== #
@@ -43,11 +37,22 @@ coverage:
 no-dirty:
 	git diff --exit-code
 
+.PHONY: dep
+dep:
+	@go mod download
+
 ## build: build binary file
 .PHONY: build
 build:
-	@go build -o s6-cli -v ./cmd/s6cli
+	@GOARCH=amd64 GOOS=linux go build -o ${BINARY_NAME} -v ./cmd/s6cli
 
+## clean: clean binary file
+.PHONY: clean
+clean:
+	@go clean
+	@rm -f ${BINARY_NAME}
+
+## run: run binary file with good args
 .PHONY: run
 run:
 	@go run ./cmd/s6cli $(ARGS)
@@ -56,6 +61,12 @@ run:
 .PHONY: test
 test:
 	@go test -v ./...
+
+## test-coverage: run all tests with coverage
+.PHONY: test-coverage
+test-coverage:
+	@go test -coverprofile=coverage.out -v ./...
+	@go tool cover -html=coverage.out
 
 ## nix: build binary file with nix
 .PHONY: nix
@@ -66,7 +77,7 @@ nix:
 # RUN COMMANDS OF CLI WITH DEFAULT ARGS
 # ==================================================================================== #
 
-## lint: lint s6-overlay folders and files
+## lint: lint s6-overlay directories and files
 .PHONY: lint
 lint:
 	@go run ./cmd/s6cli $(ARGS) lint

@@ -19,7 +19,7 @@ func main() {
 	rootPath := "/etc/s6-overlay/s6-rc.d"
 	app := &cli.App{
 		Name:     "s6-cli",
-		Version:  "0.0.1",
+		Version:  "0.0.2",
 		Compiled: time.Now(),
 		Authors: []*cli.Author{
 			{
