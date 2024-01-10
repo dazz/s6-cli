@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/dazz/s6-cli/internal/domain/service"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -19,7 +20,10 @@ type Filesystem struct {
 
 func NewFilesystem(rootPath string) *Filesystem {
 
-	// TODO: check if rootPath is valid
+	// check if the directory exists
+	if _, err := os.Stat(rootPath); os.IsNotExist(err) {
+		log.Fatal("rootPath directory does not exist: " + rootPath)
+	}
 
 	return &Filesystem{
 		rootPath: rootPath,

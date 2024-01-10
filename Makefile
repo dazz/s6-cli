@@ -44,7 +44,14 @@ dep:
 ## build: build binary file
 .PHONY: build
 build:
-	@GOARCH=amd64 GOOS=linux go build -o ${BINARY_NAME} -v ./cmd/s6cli
+	@GOARCH=amd64 GOOS=linux go build -o /Users/dazz/bin/${BINARY_NAME} -v ./cmd/s6cli
+
+## build: build binary file
+.PHONY: build-darwin
+build-darwin:
+	@GOARCH=amd64 GOOS=darwin go build -o ${BINARY_NAME} -v ./cmd/s6cli
+
+
 
 ## clean: clean binary file
 .PHONY: clean
@@ -60,7 +67,7 @@ run:
 ## test: run all tests
 .PHONY: test
 test:
-	@go test -v ./...
+	@go test ./...
 
 ## test-coverage: run all tests with coverage
 .PHONY: test-coverage

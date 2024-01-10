@@ -55,7 +55,7 @@ All commands need the `rootPath` to be specified. It must point to the directory
 Default is set to `/etc/s6-overlay/s6-rc.d`
 
 ### Create
-There are three types of services that can be created: Oneshot, Longrun and Background.
+There are three types of services that can be created: Oneshot, Longrun and Bundle.
 Read more about them [here](https://skarnet.org/software/s6-rc/s6-rc-compile.html)
 
 ```bash

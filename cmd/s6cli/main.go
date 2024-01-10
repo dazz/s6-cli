@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"github.com/dazz/s6-cli/internal/domain/create"
 	"github.com/dazz/s6-cli/internal/domain/lint"
@@ -53,10 +54,13 @@ func main() {
 
 					execute, err := command.Execute()
 					if err != nil {
-						fmt.Println(err)
+						return err
 					}
-					fmt.Println(execute)
-
+					if execute != "" {
+						fmt.Println("s6-cli: lint found issues with services in " + rootPath)
+						return errors.New(execute)
+					}
+					fmt.Println("s6-cli: lint found no issues")
 					return nil
 				},
 			},
@@ -78,7 +82,6 @@ func main() {
 					}
 
 					fmt.Println(execute)
-
 					return nil
 				},
 			},
@@ -94,11 +97,6 @@ func main() {
 					rootPath := "/etc/s6-overlay/s6-rc.d"
 					if cCtx.IsSet("rootPath") {
 						rootPath = cCtx.String("rootPath")
-					}
-					// check if the directory exists
-					if _, err := os.Stat(rootPath); os.IsNotExist(err) {
-						fmt.Printf("Directory %s does not exist\n", rootPath)
-						os.Exit(1)
 					}
 
 					var serviceType service.Type
@@ -129,11 +127,9 @@ func main() {
 
 					result, err := command.Execute()
 					if err != nil {
-						fmt.Println(err)
-						os.Exit(1)
+						return err
 					}
 					fmt.Printf("Successful created service %q\n", result)
-
 					return nil
 				},
 			},
@@ -147,18 +143,12 @@ func main() {
 					if cCtx.IsSet("rootPath") {
 						rootPath = cCtx.String("rootPath")
 					}
-					// check if the directory exists
-					if _, err := os.Stat(rootPath); os.IsNotExist(err) {
-						fmt.Println("Directory does not exist: " + rootPath)
-						os.Exit(1)
-					}
 
 					var id service.Id
 					if idArg := cCtx.Args().Get(0); idArg != "" {
 						id = service.Id(idArg)
 					} else {
-						fmt.Println("Arg idArg must not be empty")
-						os.Exit(1)
+						return errors.New("arg idArg must not be empty")
 					}
 
 					repo := filesystem.NewFilesystem(rootPath)
@@ -166,8 +156,7 @@ func main() {
 
 					result, err := command.Execute()
 					if err != nil {
-						fmt.Println(err)
-						os.Exit(1)
+						return err
 					}
 					fmt.Printf("Successful removed service %q\n", result)
 					return nil
