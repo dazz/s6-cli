@@ -20,7 +20,9 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: hakindazz/s6-cli
-          tags: |
+          tags:
+            # set to version for a tag
+            type=ref,event=tag
             # set latest tag for default branch
             type=raw,value=latest,enable={{is_default_branch}}
       -
