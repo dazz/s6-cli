@@ -14,6 +14,17 @@ help:
 # QUALITY CONTROL
 # ==================================================================================== #
 
+.PHONY: docker
+docker: docker-build docker-run
+
+.PHONY: docker-build
+docker-build:
+	docker build -t hakindazz/s6-cli:dev-latest .
+
+.PHONY: docker-run
+docker-run:
+	docker run -it --rm -v ./examples/s6-overlay:/etc/s6-overlay hakindazz/s6-cli:dev-latest
+
 ## tidy: format code and tidy modfile
 .PHONY: tidy
 tidy:
@@ -44,12 +55,12 @@ dep:
 ## build: build binary file
 .PHONY: build
 build:
-	@GOARCH=amd64 GOOS=linux go build -o /Users/dazz/bin/${BINARY_NAME} -v ./cmd/s6cli
+	@GOARCH=amd64 GOOS=linux go build -o ./${BINARY_NAME} -v ./cmd/s6cli
 
 ## build: build binary file
 .PHONY: build-darwin
 build-darwin:
-	@GOARCH=amd64 GOOS=darwin go build -o ${BINARY_NAME} -v ./cmd/s6cli
+	@GOARCH=amd64 GOOS=darwin go build -o ./${BINARY_NAME} -v ./cmd/s6cli
 
 
 
@@ -96,15 +107,15 @@ mermaid:
 
 .PHONY: create-oneshot
 create-oneshot:
-	go run ./cmd/s6cli $(ARGS) create o test
+	go run ./cmd/s6cli $(ARGS) create oneshot test
 
 .PHONY: create-longrun
 create-longrun:
-	go run ./cmd/s6cli $(ARGS) create l test
+	go run ./cmd/s6cli $(ARGS) create longrun test
 
 .PHONY: create-bundle
 create-bundle:
-	go run ./cmd/s6cli $(ARGS) create b test
+	go run ./cmd/s6cli $(ARGS) create bundle test
 
 .PHONY: remove
 remove:
