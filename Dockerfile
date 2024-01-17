@@ -25,4 +25,4 @@ WORKDIR /app
 COPY --from=builder /app/s6-cli .
 
 # Command to run the binary
-CMD ["./s6-cli"]
+ENTRYPOINT ["./s6-cli"]
