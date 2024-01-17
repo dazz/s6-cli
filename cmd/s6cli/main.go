@@ -20,7 +20,7 @@ func main() {
 	rootPath := "/etc/s6-overlay/s6-rc.d"
 	app := &cli.App{
 		Name:     "s6-cli",
-		Version:  "0.0.2",
+		Version:  "v0.2.0",
 		Compiled: time.Now(),
 		Authors: []*cli.Author{
 			{
@@ -58,7 +58,8 @@ func main() {
 					}
 					if execute != "" {
 						fmt.Println("s6-cli: lint found issues with services in " + rootPath)
-						return errors.New(execute)
+						fmt.Println(execute)
+						return nil
 					}
 					fmt.Println("s6-cli: lint found no issues")
 					return nil
@@ -89,7 +90,7 @@ func main() {
 				Name:      "create",
 				Aliases:   []string{"c"},
 				Usage:     "create a service",
-				ArgsUsage: "[type: (o|l|b)] [id]",
+				ArgsUsage: "<type: oneshot|longrun|bundle> <id>",
 				Flags: []cli.Flag{
 					&cli.BoolFlag{Value: false, Name: "overwrite", Aliases: []string{"o"}, Usage: "Ignore existing files and directories"},
 				},
@@ -98,16 +99,9 @@ func main() {
 						rootPath = cCtx.String("root-path")
 					}
 
-					var serviceType service.Type
-					switch t := cCtx.Args().Get(0); t {
-					case "o":
-						serviceType = service.TypeOneshot
-					case "l":
-						serviceType = service.TypeLongrun
-					case "b":
-						serviceType = service.TypeBundle
-					default:
-						fmt.Print("Arg type must not be empty and one of 'o', 'l' or 'b'\n")
+					var serviceType = service.Type(cCtx.Args().Get(0))
+					if service.ValidType(serviceType) == false {
+						fmt.Println("Argument type be one of 'oneshot', 'longrun' or 'bundle'")
 						os.Exit(1)
 					}
 
@@ -115,7 +109,7 @@ func main() {
 					if idArg := cCtx.Args().Get(1); idArg != "" {
 						id = service.Id(idArg)
 					} else {
-						fmt.Println("Arg idArg must not be empty")
+						fmt.Println("Argument id must not be empty")
 						os.Exit(1)
 					}
 

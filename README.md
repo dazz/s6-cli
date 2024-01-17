@@ -38,6 +38,12 @@ Creates a docker image with the cli installed
 make docker
 ```
 
+or if you pulled the image from dockerhub
+```bash
+docker run -it --rm -v ./examples/s6-overlay:/etc/s6-overlay hakindazz/s6-cli:latest
+```
+
+
 ### In Dockerfile
 If you want to use the cli in a Dockerfile you can copy it from the docker image
 ```dockerfile
@@ -50,8 +56,8 @@ There is a help command that you can use to get more info about the commands in 
 ```bash
 ./s6-cli help
 ```
-### The option `--rootPath {path}, -p {path}` 
-All commands need the `rootPath` to be specified. It must point to the directory where services will be defined. 
+### The option `--root-path {path}, -p {path}` 
+All commands need the `root-path` to be specified. It must point to the directory where services will be defined. 
 Default is set to `/etc/s6-overlay/s6-rc.d`
 
 ### Create
@@ -59,7 +65,7 @@ There are three types of services that can be created: Oneshot, Longrun and Bund
 Read more about them [here](https://skarnet.org/software/s6-rc/s6-rc-compile.html)
 
 ```bash
-./s6-cli  --rootPath {path} create {o|l|b} {service}
+./s6-cli  --root-path {path} create {oneshot|longrun|bundle} {service}
 ```
 
 ### Remove
@@ -74,7 +80,6 @@ If the service is not needed anymore it can be removed with the following comman
 ```bash
 ./s6-cli lint
 ```
-
 
 
 ### Mermaid
@@ -108,12 +113,3 @@ graph TD;
     nginx --> php-fpm
     php-fpm --> create-directories
 ```
-
-
-## todo
-* create dependencies between services
-* add `s6-cli update` command
-* add `s6-cli init` command
-* add `s6-cli ci` command
-* style output with color https://github.com/charmbracelet/glamour
-* tui with https://github.com/charmbracelet/bubbletea
