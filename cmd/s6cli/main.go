@@ -29,11 +29,11 @@ func main() {
 			},
 		},
 		Usage: "CLI for creating and linting files and directories",
-		// We'll be using the same flag for all our commands
+		// We'll be using the same flag for all our commands,
 		// so we'll define it up here
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:    "rootPath",
+				Name:    "root-path",
 				Aliases: []string{"p"},
 				Value:   "/etc/s6-overlay/s6-rc.d",
 				Usage:   "Path to s6-rc.d directory",
@@ -45,8 +45,8 @@ func main() {
 				Aliases: []string{"l"},
 				Usage:   "lint directories and files",
 				Action: func(cCtx *cli.Context) error {
-					if cCtx.IsSet("rootPath") {
-						rootPath = cCtx.String("rootPath")
+					if cCtx.IsSet("root-path") {
+						rootPath = cCtx.String("root-path")
 					}
 
 					repo := filesystem.NewFilesystem(rootPath)
@@ -69,8 +69,8 @@ func main() {
 				Aliases: []string{"m"},
 				Usage:   "document s6 service dependencies in mermaid syntax",
 				Action: func(cCtx *cli.Context) error {
-					if cCtx.IsSet("rootPath") {
-						rootPath = cCtx.String("rootPath")
+					if cCtx.IsSet("root-path") {
+						rootPath = cCtx.String("root-path")
 					}
 
 					repo := filesystem.NewFilesystem(rootPath)
@@ -94,9 +94,8 @@ func main() {
 					&cli.BoolFlag{Value: false, Name: "overwrite", Aliases: []string{"o"}, Usage: "Ignore existing files and directories"},
 				},
 				Action: func(cCtx *cli.Context) error {
-					rootPath := "/etc/s6-overlay/s6-rc.d"
-					if cCtx.IsSet("rootPath") {
-						rootPath = cCtx.String("rootPath")
+					if cCtx.IsSet("root-path") {
+						rootPath = cCtx.String("root-path")
 					}
 
 					var serviceType service.Type
@@ -139,9 +138,8 @@ func main() {
 				Usage:     "remove a service",
 				ArgsUsage: "[name]",
 				Action: func(cCtx *cli.Context) error {
-					rootPath := "/etc/s6-overlay/s6-rc.d"
-					if cCtx.IsSet("rootPath") {
-						rootPath = cCtx.String("rootPath")
+					if cCtx.IsSet("root-path") {
+						rootPath = cCtx.String("root-path")
 					}
 
 					var id service.Id

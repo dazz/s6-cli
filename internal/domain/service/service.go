@@ -8,6 +8,17 @@ const (
 	TypeBundle  Type = "bundle"
 )
 
+var Types = []Type{TypeOneshot, TypeLongrun, TypeBundle}
+
+func ValidType(ty Type) bool {
+	for _, t := range Types {
+		if t == ty {
+			return true
+		}
+	}
+	return false
+}
+
 type Id string
 type Type string
 type Lint string
